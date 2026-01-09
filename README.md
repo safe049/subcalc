@@ -88,6 +88,3 @@ Weights are empirically tuned for typical human experience but can be adjusted i
 - Some part of this README is written by AI Qwen3-Max [Not a Ad!]
 
 ---
-
-> “Time is what prevents everything from happening at once.”  
-> — But your brain disagrees. Use `subcalc` to measure how much.
