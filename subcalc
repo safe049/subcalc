@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+import json
+import argparse
+import sys
+sys.path.insert(0, '/usr/lib')
+from subcalc.utils import *
+
+def parse_seq(s):
+    try:
+        seq = json.loads(s)
+        if not isinstance(seq, list):
+            raise ValueError("Input must be a list")
+        for item in seq:
+            if not isinstance(item, list) or len(item) != 4:
+                raise ValueError(
+                    "Each element must be a list of 4 numbers [c,n,a,f]")
+            for x in item:
+                if not isinstance(x, (int, float)):
+                    raise ValueError("All values must be numbers")
+                if not (0.0 <= x <= 1.0):
+                    raise ValueError("All values must be in [0,1]")
+        return seq
+    except json.JSONDecodeError as e:
+        raise argparse.ArgumentTypeError(f"Invalid JSON: {e}")
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(str(e))
+
+
+parser = argparse.ArgumentParser(description="Calculate the Subjective Time")
+
+parser.add_argument(
+    'mode',
+    choices=['custom', 'single', 'range'],
+    help='Mode of calculation: '
+         '"custom" uses t and one set of c,n,a,f; '
+         '"single" uses default t=1 and one set; '
+         '"range" uses t and a sequence of [c,n,a,f] states.'
+)
+
+parser.add_argument('-t', '--time', type=float, default=1.0,
+                    help='Reality time unit (default: 1.0). Used in "custom" and "range".')
+parser.add_argument('-c', '--concentration', type=float, default=0.0,
+                    help='Concentration [0,1] (default: 0.0)')
+parser.add_argument('-n', '--novelty', type=float, default=0.0,
+                    help='Novelty [0,1] (default: 0.0)')
+parser.add_argument('-a', '--arousal', type=float, default=0.0,
+                    help='Arousal [0,1] (default: 0.0)')
+parser.add_argument('-f', '--flow', type=float, default=0.0,
+                    help='Flow [0,1] (default: 0.0)')
+parser.add_argument('--seq', type=parse_seq,
+                    help='Sequence of states for "range" mode, as JSON: [[c,n,a,f], ...]')
+
+args = parser.parse_args()
+
+
+def calc(mode, t, c, n, a, f, seq):
+    if mode == "custom":
+        if None in (c, n, a, f):
+            raise ValueError("In 'custom' mode, c, n, a, f must be provided.")
+        return calc_subjective_custom(t, c, n, a, f)
+    elif mode == "single":
+        return calc_subjective_single_unit(c, n, a, f)
+    elif mode == "range":
+        if seq is None:
+            raise ValueError("In 'range' mode, --seq must be provided.")
+        return calc_subjective_range(t, seq)
+    else:
+        raise ValueError("Invalid mode")
+
+
+def main():
+    sub_t = calc(
+        mode=args.mode,
+        t=args.time,
+        c=args.concentration,
+        n=args.novelty,
+        a=args.arousal,
+        f=args.flow,
+        seq=args.seq
+    )
+    print(sub_t)
+
+
+if __name__ == "__main__":
+    main()
